@@ -7,8 +7,6 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,7 +26,16 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-public class MainView extends JFrame implements ActionListener, ListSelectionListener, KeyListener {
+
+public class MainView extends JFrame implements ActionListener, ListSelectionListener {
+    private JTextField addItemTextField;
+    private JButton addItemButton;
+    private JButton removeItemButton;
+    private JButton fetchButton;
+    private DefaultListModel itemList;
+    private JList elementJList;
+    private int count;
+    private int loopVar;
     
     public MainView() {
         super("Tweetstats");
@@ -55,11 +62,12 @@ public class MainView extends JFrame implements ActionListener, ListSelectionLis
         fetchPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
         fetchPanel.setBackground(Color.WHITE);
         
-        JButton fetchButton = new JButton("Fetch");
+        fetchButton = new JButton("Fetch");
+        fetchButton.addActionListener(this);
         fetchButton.setPreferredSize(new Dimension(80,40));
         fetchPanel.add(fetchButton);
         
-        DefaultListModel itemList = new DefaultListModel();
+        itemList = new DefaultListModel();
 
         itemList.addElement("putain");
         itemList.addElement("fuck");
@@ -68,36 +76,39 @@ public class MainView extends JFrame implements ActionListener, ListSelectionLis
         itemList.addElement("énervant");
         itemList.addElement("merde");
         
-        JList elementJList = new JList(itemList);
+        elementJList = new JList(itemList);
         elementJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         elementJList.setLayoutOrientation(JList.HORIZONTAL_WRAP);
         elementJList.setSelectedIndex(0);
         elementJList.addListSelectionListener(this);
 
         JScrollPane listScroller = new JScrollPane(elementJList);
-        listScroller.setPreferredSize(new Dimension(200, 300));
+        listScroller.setPreferredSize(new Dimension(200, 250));
         fetchPanel.add(listScroller);
-        fetchPanel.add(Box.createVerticalStrut(10));
+        //fetchPanel.add(Box.createVerticalStrut(10));
         
-        JPanel addButtonPanel = new JPanel();
-        addButtonPanel.setLayout(new BoxLayout(addButtonPanel, BoxLayout.X_AXIS));
+        JPanel buttonListPanel = new JPanel();
+        buttonListPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        buttonListPanel.setLayout(new BoxLayout(buttonListPanel, BoxLayout.X_AXIS));
         //buttonPanel.setBackground(Color.WHITE);
-        JButton addItemButton = new JButton();
+        addItemButton = new JButton();
+        addItemButton.addActionListener(this);
         //addItemButton.setMaximumSize(new Dimension(40,30));
         //addItemButton.setMinimumSize(new Dimension(30,30));
         addItemButton.setPreferredSize(new Dimension(40,40));
-        JButton removeItemButton = new JButton();
+        removeItemButton = new JButton();
+        removeItemButton.addActionListener(this);
         //removeItemButton.setMaximumSize(new Dimension(30,30));
         //removeItemButton.setMinimumSize(new Dimension(30,30));
         removeItemButton.setPreferredSize(new Dimension(40,40));
         
         try {
+            removeItemButton.setIcon(new ImageIcon(ImageIO.read(getClass().getClassLoader().getResource("resources/images/remove.png"))));
+            buttonListPanel.add(removeItemButton);
             addItemButton.setIcon(new ImageIcon(ImageIO.read(getClass().getClassLoader().getResource("resources/images/add.png"))));
-            addButtonPanel.add(addItemButton);
+            buttonListPanel.add(addItemButton);
             
-            JTextField addItemTextField = new JTextField();
-            //on le rend evenementiel
-            addItemTextField.addKeyListener(this);
+            addItemTextField = new JTextField();
             //on lui donne une dimension
             addItemTextField.setPreferredSize(new Dimension(160,40));
             //on peut rentrer jusqu'a 15 caracteres
@@ -106,12 +117,10 @@ public class MainView extends JFrame implements ActionListener, ListSelectionLis
             Font police = new Font("Arial", Font.BOLD, 14);
             addItemTextField.setFont(police);
             //on ajoute les differents elements
-            addButtonPanel.add(Box.createHorizontalStrut(10));
-            addButtonPanel.add(addItemTextField);
+            buttonListPanel.add(Box.createHorizontalStrut(10));
+            buttonListPanel.add(addItemTextField);
             
-            fetchPanel.add(addButtonPanel);
-            removeItemButton.setIcon(new ImageIcon(ImageIO.read(getClass().getClassLoader().getResource("resources/images/remove.png"))));
-            fetchPanel.add(removeItemButton);
+            fetchPanel.add(buttonListPanel);
         } 
         catch (IOException ex) {
             Logger.getLogger(MainView.class.getName()).log(Level.SEVERE, null, ex);
@@ -128,23 +137,45 @@ public class MainView extends JFrame implements ActionListener, ListSelectionLis
 
     @Override
     public void actionPerformed(ActionEvent e) {
-    }
+        //on recupere la source du clic
+        Object source = (JButton)(e.getSource());
+        
+        count = 0;
+        loopVar = 0;
+        
+        if(source == addItemButton) {
+            while(loopVar < itemList.size()) {
+                if(addItemTextField.getText().equals(itemList.get(loopVar).toString())) {
+                    System.out.println(itemList.get(loopVar).toString());
+                    count++;
+                }
+                loopVar++;
+            }
+            if(count == 0 && !addItemTextField.getText().equals(""))
+                itemList.addElement(addItemTextField.getText());
+            addItemTextField.setText("");
+        }
+        else if(source == removeItemButton) {
+            /*int selected[] = elementJList.getSelectedIndices();
 
+            for (int i = 0; i < selected.length; i++) {
+                System.out.println(selected[i]);
+                itemList.removeElementAt(selected[i]);
+            }*/
+            
+            if(elementJList.getSelectedIndices().length > 0) {
+                int[] selectedIndices = elementJList.getSelectedIndices();
+                for (int i = selectedIndices.length-1; i >=0; i--) {
+                    itemList.removeElementAt(selectedIndices[i]);
+                } 
+            } 
+        }
+        else if(source == fetchButton) {
+            
+        }
+    }
+    
     @Override
     public void valueChanged(ListSelectionEvent e) {
-    }
-
-    @Override
-    public void keyTyped(KeyEvent e) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-    }
-
-    @Override
-    public void keyReleased(KeyEvent e) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }
